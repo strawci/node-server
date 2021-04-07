@@ -37,7 +37,11 @@ class StrawServer extends EventEmitter {
         ctx.socket.on("disconnect", () => {
             this.clients.splice(index, 1);
         });
-        ctx.socket.emit("authSuccess");
+        ctx.socket.emit("authSuccess", ctx.projectID);
+    }
+
+    denyAuthentication (ctx, reason) {
+        ctx.socket.emit("authFailed", ctx.projectID, reason);
     }
 
     listen(callback) {
@@ -49,17 +53,20 @@ class StrawServer extends EventEmitter {
         }
     }
 
-    deploy(id, callback) {
+    deploy(ctx, callback) {
         let clientCount = 0;
         for (let client of this.clients) {
-            if (client.projectID == id) {
+            if (client.projectID == ctx.projectID) {
                 clientCount++;
-                client.socket.emit("deploy", id);
+                client.socket.emit("deploy", {
+			projectID: ctx.projectID,
+			branch: ctx.branch
+		});
             }
         }
 
         if (callback) {
-            callback(id, clientCount);
+            callback(ctx.projectID, clientCount);
         }
     }
 }
